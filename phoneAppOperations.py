@@ -32,6 +32,7 @@ class PhoneApp:
         print("7. Print All Favouratie Contacts")
         print("8. Print All Recent Calls")
         print("9. Delete A Contact")
+        print("10. Change Contact Info")
         chosenOperation = int(input())
         
         if chosenOperation == 1:
@@ -53,6 +54,8 @@ class PhoneApp:
           self.printRecentCallsList()
         elif chosenOperation == 9:
           self.deleteContacts()
+        elif chosenOperation == 10:
+          self.chageContactInfo()
         else:
           if chosenOperation < 1 or chosenOperation > 3:
                   print("Invalid Input!")
@@ -270,6 +273,31 @@ class PhoneApp:
         return
       i+=1
     print(name,"No Such Contact Exist")
+
+  def chageContactInfo(self):
+    try:
+      print("Choose Contact Number You want to change its info such as '1' ")
+      i = self.shownAnOrderedContactsList()
+      selectedNumber = int(input())
+      if selectedNumber <= 0 or selectedNumber >= i:
+        print("Invalid Input, Out Of Range!")
+      print("Enter New Name")
+      chosenName = input()
+      print("Enter New Phone")
+      chosenPhone = int(input())
+
+      self.contactsList[selectedNumber - 1].name = chosenName
+      self.contactsList[selectedNumber - 1].phone = chosenPhone
+      with shelve.open("my_local_storage") as db:
+        db["contacts_list"] = self.contactsList
+        print("Contact Has Been Updated", self.contactsList[selectedNumber - 1].name)
+
+    except Exception as error:
+              error_info = traceback.extract_tb(error.__traceback__)[-1]
+              print("Error type:", type(error).__name__)
+              print("Error message:", error)
+              print("Line number:", error_info.lineno)
+
 # بدي أطبع المعلومات هي
 #بدي أعمل كلاس اسمه Contact
 # يحتوي معلومات الإتصال
