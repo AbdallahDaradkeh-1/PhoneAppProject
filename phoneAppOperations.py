@@ -1,4 +1,5 @@
 import shelve # This is store data in a file in the harddisk so They don't go once terminal session if over
+import traceback
 
 
 class PhoneApp:
@@ -6,7 +7,7 @@ class PhoneApp:
   def __init__(self):
     self.contactsList = []
     self.favouriteList = []
-
+    self.recentCalls = []
 
   def start(self):
     try:
@@ -14,8 +15,11 @@ class PhoneApp:
       with shelve.open("my_local_storage") as db:
         self.loadedContacts = db.get("contacts_list", [])
         self.loadedFavouriteContacts = db.get("favourite_List", [])
+        self.loadedRecentCalls = db.get("recent_call_list", [])
         self.contactsList = self.loadedContacts
         self.favouriteList = self.loadedFavouriteContacts
+        self.recentCalls = self.loadedRecentCalls
+        
         print("Data Have Been Loaded Successfully")
       while True:    
         print("Hello, Choose Number Of Operation You Would Like To Do:")
@@ -26,6 +30,8 @@ class PhoneApp:
         print("5. Do a Call To A Specific Person")
         print("6. Add A Contact To Favouratie List")
         print("7. Print All Favouratie Contacts")
+        print("8. Print All Recent Calls")
+        print("9. Delete A Contact")
         chosenOperation = int(input())
         
         if chosenOperation == 1:
@@ -43,6 +49,10 @@ class PhoneApp:
           self.favouriteContacts()
         elif chosenOperation == 7:
           self.printFavouriteContacts()
+        elif chosenOperation == 8:
+          self.printRecentCallsList()
+        elif chosenOperation == 9:
+          self.deleteContacts()
         else:
           if chosenOperation < 1 or chosenOperation > 3:
                   print("Invalid Input!")
@@ -98,7 +108,7 @@ class PhoneApp:
   def call(self):
     try:  
       # Show all available contacts
-      print("Choose Number Of Contact Such as '1' you wanna call")
+      print("Choose Number Of Contact you wanna call Such as '1'")
       print()
       
       i = self.shownAnOrderedContactsList()
@@ -116,6 +126,10 @@ class PhoneApp:
         if end != 1:
           print("invalid Input")
         print("Call Has Been Ended!")
+        self.recentCalls.append(selectedContact)
+        with shelve.open("my_local_storage") as db:
+          db["recent_call_list"] = self.recentCalls
+          print("Call Has been added To Recent Calls Successfully!")
         return
     except ValueError:
       print("Invalid Input Type!")
@@ -133,14 +147,13 @@ class PhoneApp:
         self.favouriteList.append(self.contactsList[chosenContactNumber - 1])
         with shelve.open("my_local_storage") as db:
           db["favourite_List"] = self.favouriteList
-          print("Has Been Saved And Added To Favouraite List")
+          print("Contact Has Been Saved And Added To Favouraite List")
     except ValueError:
       print("InvalidInput")
   def printFavouriteContacts(self):
     
     for contact in self.favouriteList:
       print(contact.name, contact.phone)
-      
       
 
 
@@ -153,13 +166,110 @@ class PhoneApp:
   def printContactsInfo(self):
     for contact in self.contactsList:
       print(contact.name, contact.phone)
+
   def shownAnOrderedContactsList(self):
     i = 1
+    if self.isEmpty():
+      print("Contacts List is Empty, You have not added any contact yet!")
+      return
     for contact in self.contactsList:
             print(i, contact.name, contact.phone)
             i += 1
+    
     return i
-  
+  def printRecentCallsList(self):
+    for contact in self.recentCalls:
+      print(contact.name, contact.phone)
+
+  def deleteContacts(self):
+    try:
+      #Show All Contacts To User
+      print("Choose Contact You want to delete such as '1':")
+      i = self.shownAnOrderedContactsList()
+      #User Choose From Contact using Contact Number Such as '1'
+      selectedContactNumber = int(input())
+      if selectedContactNumber <= 0 or selectedContactNumber >= i:
+        print("Invalid Input, Out Of Range!")
+        return
+      #We check all other lists and delete related user info
+      selectedContact = self.contactsList[selectedContactNumber - 1]
+      self.deleteContactFromFavouriteList(selectedContact.name)
+      self.deleteContactFromRecentCallsList(selectedContact.name)
+      #We Delete User from Contact
+      self.deleteUserFromContactsList(selectedContact.name)
+      #Print Success Message
+    except ValueError:
+      print("Invalid Input Type!")
+  def deleteContactFromFavouriteList(self, name):
+    try:
+      i = 0
+      outcomes = 0
+      if self.generalIsEmpty(self.favouriteList):
+        print("Favourite List Is Empty")
+      for contact in self.favouriteList:
+        if name == contact.name:
+          deletedContact = self.favouriteList.pop(i)
+          print(deletedContact.name, "Has Been Deleted Sucessfully")
+          with shelve.open("my_local_storage") as db:
+            db["favourite_List"] = self.favouriteList
+            print("Favourite List Has been Updated")
+          return
+          
+        i += 1
+      if outcomes == 0:
+        print(name ,"There is no Such Contact in the Favourite List")
+    except Exception as error:
+      error_info = traceback.extract_tb(error.__traceback__)[-1]
+      print("Error type:", type(error).__name__)
+      print("Error message:", error)
+      print("Line number:", error_info.lineno)
+  def generalIsEmpty(self, list):
+    if len(list) == 0:
+      return True
+    else:
+      return False
+
+  def deleteContactFromRecentCallsList(self, name):
+        try:
+          #Go Through All Contacts
+          i = 0
+          if self.generalIsEmpty(self.recentCalls):
+            print("Recent Calls List is empty")
+            return
+          for contact in self.recentCalls:
+            if name == contact.name:
+              deletedContact = self.recentCalls.pop(i)
+              print(deletedContact, "Has Been Deleted Successfully!")
+              with shelve.open("my_local_storage") as db:
+                  db["recent_call_list"] = self.favouriteList
+                  print("recentCall List Has been Updated")
+              return
+              
+            i += 0
+          print(name, "No Such Contact in Recent Calls List")
+          #Compare names
+          #Delete Contact Using Pop
+          #
+        except Exception as error:
+          error_info = traceback.extract_tb(error.__traceback__)[-1]
+          print("Error type:", type(error).__name__)
+          print("Error message:", error)
+          print("Line number:", error_info.lineno)
+  def deleteUserFromContactsList(self, name):
+    i = 0
+    if self.isEmpty():
+      print("Contact List is Empty")
+      return
+    for contact in self.contactsList:
+      if name == contact.name:
+        deletedContact = self.contactsList.pop(i)
+        print(deletedContact, "Contact Has Been Deleted Successfully")
+        with shelve.open("my_local_storage") as db:
+            db["contacts_list"] = self.favouriteList
+            print("Contact List Has been Updated")
+        return
+      i+=1
+    print(name,"No Such Contact Exist")
 # بدي أطبع المعلومات هي
 #بدي أعمل كلاس اسمه Contact
 # يحتوي معلومات الإتصال
