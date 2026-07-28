@@ -55,7 +55,7 @@ class PhoneApp:
         elif chosenOperation == 9:
           self.deleteContacts()
         elif chosenOperation == 10:
-          self.chageContactInfo()
+          self.changeContactInfo()
         else:
           if chosenOperation < 1 or chosenOperation > 3:
                   print("Invalid Input!")
@@ -274,7 +274,7 @@ class PhoneApp:
       i+=1
     print(name,"No Such Contact Exist")
 
-  def chageContactInfo(self):
+  def changeContactInfo(self):
     try:
       print("Choose Contact Number You want to change its info such as '1' ")
       i = self.shownAnOrderedContactsList()
@@ -285,18 +285,45 @@ class PhoneApp:
       chosenName = input()
       print("Enter New Phone")
       chosenPhone = int(input())
+      oldName = self.contactsList[selectedNumber - 1].name
+      oldPhone = self.contactsList[selectedNumber - 1].phone
 
       self.contactsList[selectedNumber - 1].name = chosenName
       self.contactsList[selectedNumber - 1].phone = chosenPhone
+
+      favouriteContactIndex =  self.generalListofContactsSearch(self.favouriteList, oldName)
+      self.favouriteList[favouriteContactIndex].name = chosenName
+      self.favouriteList[favouriteContactIndex].phone = chosenPhone
+      recentCallsContactIndex = self.generalListofContactsSearch(self.recentCalls, oldName)
+      self.recentCalls[recentCallsContactIndex].name = chosenName
+      self.recentCalls[favouriteContactIndex].phone = chosenPhone
+      
       with shelve.open("my_local_storage") as db:
         db["contacts_list"] = self.contactsList
+        db["favourite_List"] = self.favouriteList
+        db["recent_call_list"] = self.recentCalls
         print("Contact Has Been Updated", self.contactsList[selectedNumber - 1].name)
+        print("Favourite Contact Has Been Updated", self.favouriteList[favouriteContactIndex].name)
+        print("RecentCalls Has Been Updated", self.recentCalls[recentCallsContactIndex].name)
+
 
     except Exception as error:
               error_info = traceback.extract_tb(error.__traceback__)[-1]
               print("Error type:", type(error).__name__)
               print("Error message:", error)
               print("Line number:", error_info.lineno)
+  def generalListofContactsSearch(self, contactsTypelist, name):
+    # get list and name of contact
+    i = 0
+    
+    for contact in contactsTypelist:
+      if contact.name == name:
+        print(contact.name, contact.phone)
+        return i
+      i += 1
+    print("Contact is Not Exist In This List!")
+    return -1
+
 
 # بدي أطبع المعلومات هي
 #بدي أعمل كلاس اسمه Contact
